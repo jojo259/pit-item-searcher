@@ -142,7 +142,7 @@ def getItems(playerData):
 
 print('starting')
 
-pageAt = 90
+pageAt = int(open('pageToStartAt.txt').read())
 while pageAt < 4000:
 	#try:
 	#print(f'page {pageAt}')
