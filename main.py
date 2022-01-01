@@ -100,84 +100,52 @@ def unpack_nbt(tag):
 def getItems(playerData):
 	items = []
 
+	toDecode = []
+
 	try: #inv
-		kvl = playerData['player']['stats']['Pit']['profile']['inv_contents']['data']
-		newkvl = []
-		for x in kvl:
-			if x < 0:
-				newkvl.append(x + 256)
-			else:
-				newkvl.append(x)
-		inv=decode_nbt(bytes(newkvl))
-		for tagl in inv.tags:
-			for tagd in tagl.tags:
-				try:
-					items.append(tagd)
-				except:
-					''
+		toDecode.append(playerData['player']['stats']['Pit']['profile']['inv_contents']['data'])
 	except:
-		''
+		pass
 	try: #end
-		kvl2 = playerData['player']['stats']['Pit']['profile']['inv_enderchest']['data']
-		newkvl2 = []
-		for x in kvl2:
-			if x < 0:
-				newkvl2.append(x + 256)
-			else:
-				newkvl2.append(x)
-		inv2=decode_nbt(bytes(newkvl2))
-		for tagl in inv2.tags:
-			for tagd in tagl.tags:
-				try:
-					items.append(tagd)
-				except:
-					''
-	except:
-		''
-	try: #sta
-		kvl3 = playerData['player']['stats']['Pit']['profile']['item_stash']['data']
-		newkvl3 = []
-		for x in kvl3:
-			if x < 0:
-				newkvl3.append(x + 256)
-			else:
-				newkvl3.append(x)
-		inv3=decode_nbt(bytes(newkvl3))
-		for tagl in inv3.tags:
-			for tagd in tagl.tags:
-				try:
-					items.append(tagd)
-				except:
-					''
-	except:
-		''
-	try:
-		kvl4 = playerData['player']['stats']['Pit']['profile']['spire_stash_inv']['data']
-		newkvl4 = []
-		for x in kvl4:
-			if x < 0:
-				newkvl4.append(x + 256)
-			else:
-				newkvl4.append(x)
-		inv4=decode_nbt(bytes(newkvl4))
-		for tagl in inv4.tags:
-			for tagd in tagl.tags:
-				try:
-					items.append(tagd)
-				except:
-					''
+		toDecode.append(playerData['player']['stats']['Pit']['profile']['inv_enderchest']['data'])
 	except:
 		pass
 
-	for i, item in enumerate(items):
-		items[i] = unpack_nbt(item)
+	try: #sta
+		toDecode.append(playerData['player']['stats']['Pit']['profile']['item_stash']['data'])
+	except:
+		pass
+
+	try: #spr
+		toDecode.append(playerData['player']['stats']['Pit']['profile']['spire_stash_inv']['data'])
+	except:
+		pass
+
+	for curDecode in toDecode:
+		newList = []
+		for x in curDecode:
+			if x < 0:
+				newList.append(x + 256)
+			else:
+				newList.append(x)
+		decoded = decode_nbt(bytes(newList))
+		for tagl in decoded.tags:
+			for tagd in tagl.tags:
+				try:
+					unpacked = unpack_nbt(tagd)
+					if unpacked != {}:
+						items.append(unpack_nbt(tagd))
+				except:
+					pass
 
 	return items
 
-pageAt = 0
+print('starting')
+
+pageAt = 90
 while pageAt < 4000:
 	#try:
-	print(f'page {pageAt}')
+	#print(f'page {pageAt}')
 	lbPlayers = doRequest(f'https://pitpanda.rocks/api/leaderboard/xp?page={pageAt}')
 	if lbPlayers['success']:
 		pageAt += 1
@@ -189,7 +157,7 @@ while pageAt < 4000:
 					playerUsername = playerUsername.split(']')[1][3:]
 				else: #no rank
 					playerUsername = playerUsername[5:]
-				print(f'checking {playerUsername}')
+				#print(f'checking {playerUsername}')
 				checkPlayer(playerUsername)
 		else:
 			pass
