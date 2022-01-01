@@ -70,7 +70,6 @@ def checkItem(item):
 				good = True
 			'''
 
-
 def checkPlayer(playerUsername):
 	toCheckUrl = f'https://api.hypixel.net/player?key={apiKey}&name={playerUsername}'
 	dataReceived = doRequest(toCheckUrl)
@@ -81,11 +80,11 @@ def checkPlayer(playerUsername):
 	else:
 		print('a')
 
-def decode_nbt(raw):
+def decode_nbt(raw): #not mine
 	data = nbt.nbt.NBTFile(fileobj=io.BytesIO(raw))
 	return data
 
-def unpack_nbt(tag):
+def unpack_nbt(tag): #not mine
 	"""
 	Unpack an NBT tag into a native Python data structure.
 	"""
@@ -99,7 +98,6 @@ def unpack_nbt(tag):
 
 def getItems(playerData):
 	items = []
-
 	toDecode = []
 
 	try: #inv
@@ -144,26 +142,26 @@ print('starting')
 
 pageAt = int(open('pageToStartAt.txt').read())
 while pageAt < 4000:
-	#try:
-	#print(f'page {pageAt}')
-	lbPlayers = doRequest(f'https://pitpanda.rocks/api/leaderboard/xp?page={pageAt}')
-	if lbPlayers['success']:
-		pageAt += 1
-		if len(lbPlayers['leaderboard']) > 0:
-			for lbPlayer in lbPlayers['leaderboard']:
-				playerUuid = lbPlayer['uuid']
-				playerUsername = lbPlayer['name']
-				if ']' in playerUsername:
-					playerUsername = playerUsername.split(']')[1][3:]
-				else: #no rank
-					playerUsername = playerUsername[5:]
-				#print(f'checking {playerUsername}')
-				checkPlayer(playerUsername)
+	try:
+		print(f'page {pageAt}')
+		lbPlayers = doRequest(f'https://pitpanda.rocks/api/leaderboard/xp?page={pageAt}')
+		if lbPlayers['success']:
+			pageAt += 1
+			if len(lbPlayers['leaderboard']) > 0:
+				for lbPlayer in lbPlayers['leaderboard']:
+					playerUuid = lbPlayer['uuid']
+					playerUsername = lbPlayer['name']
+					if ']' in playerUsername:
+						playerUsername = playerUsername.split(']')[1][3:]
+					else: #no rank
+						playerUsername = playerUsername[5:]
+					#print(f'checking {playerUsername}')
+					checkPlayer(playerUsername)
+			else:
+				pass
 		else:
 			pass
-	else:
+	except:
 		pass
-	#except:
-	#	pass
 
 print('done')
