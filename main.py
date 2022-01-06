@@ -11,15 +11,10 @@ import math
 #from tinydb import TinyDB, Query
 from nbt.nbt import NBTFile, TAG_Long, TAG_Int, TAG_String, TAG_List, TAG_Compound
 
-apiKey = open('apiKey.txt').read()
-
-def doRequest(url):
-	try:
-		apiCalled = requests.get(url, timeout = 10).json()
-		return apiCalled
-	except:
-		#print('api timeout probably')
-		return None
+try:
+	apiKey = open('apiKey.txt').read()
+except:
+	print('create text file "apiKey"')
 
 def checkItem(item):
 	itemName = None
@@ -28,49 +23,16 @@ def checkItem(item):
 	except:
 		pass
 	if itemName != None:
-		if 'Rage' in itemName:
-			reg = 0
-			ass = 0
-			cf = 0
-			mir = 0
-			pero = 0
-			for ench in item['tag']['ExtraAttributes']['CustomEnchants']:
-				enchKey, enchLevel = ench['Key'], ench['Level']
-				if enchKey == 'regularity':
-					reg = enchLevel
-				if enchKey == 'sneak_teleport':
-					ass = enchLevel
-				if enchKey == 'power_against_crits':
-					cf = enchLevel
-				if enchKey == 'immune_true_damage':
-					mir = enchLevel
-				if enchKey == 'regen_when_hit':
-					pero = enchLevel
+		toOutput = False
 
-			good = False
-			if reg > 0 and ass > 0:
-				good = True
+		print(itemName)
 
-			if good:
-				print()
-				print(item)
-
-			'''
-			if reg == 3 and ass == 3:
-				good = True
-			if reg == 3 and cf == 3 and mir == 1:
-				good = True
-			if reg == 3 and pero == 3 and mir == 1:
-				good = True
-			if reg > 0 and ass >= 2 and cf == 3:
-				good = True
-			if reg > 0 and ass >= 2 and cf == 3:
-				good = True
-			if reg > 0 and ass >= 2 and cf == 3:
-				good = True
-			'''
+		if toOutput:
+			print()
+			print(item)
 
 def checkPlayer(playerUsername):
+	#print(f'checking {playerUsername}')
 	toCheckUrl = f'https://api.hypixel.net/player?key={apiKey}&name={playerUsername}'
 	dataReceived = doRequest(toCheckUrl)
 	if dataReceived != None:
@@ -80,11 +42,17 @@ def checkPlayer(playerUsername):
 	else:
 		print('a')
 
-def decode_nbt(raw): #not mine
-	data = nbt.nbt.NBTFile(fileobj=io.BytesIO(raw))
-	return data
+def doRequest(url):
+	returnedApi = False
+	while not returnedApi:
+		try:
+			apiCalled = requests.get(url, timeout = 10).json()
+			returnedApi = True
+			return apiCalled
+		except:
+			print('api error, retrying')
 
-def unpack_nbt(tag): #not mine
+def unpack_nbt(tag): #credit CrypticPlasma on hypixel forums
 	"""
 	Unpack an NBT tag into a native Python data structure.
 	"""
@@ -96,37 +64,44 @@ def unpack_nbt(tag): #not mine
 	else:
 		return tag.value
 
+def decode_nbt(raw): #credit CrypticPlasma on hypixel forums, modified
+	    """
+	    Decode a gziped and base64 decoded string to an NBT object
+	    """
+
+	    return nbt.nbt.NBTFile(fileobj=io.BytesIO(raw))
+
 def getItems(playerData):
 	items = []
 	toDecode = []
 
-	try: #inv
+	try: #inventory
 		toDecode.append(playerData['player']['stats']['Pit']['profile']['inv_contents']['data'])
 	except:
 		pass
-	try: #end
+	try: #enderchest
 		toDecode.append(playerData['player']['stats']['Pit']['profile']['inv_enderchest']['data'])
 	except:
 		pass
 
-	try: #sta
+	try: #stash
 		toDecode.append(playerData['player']['stats']['Pit']['profile']['item_stash']['data'])
 	except:
 		pass
 
-	try: #spr
+	try: #spire stash
 		toDecode.append(playerData['player']['stats']['Pit']['profile']['spire_stash_inv']['data'])
 	except:
 		pass
 
 	for curDecode in toDecode:
-		newList = []
+		temp = []
 		for x in curDecode:
 			if x < 0:
-				newList.append(x + 256)
+				temp.append(x + 256)
 			else:
-				newList.append(x)
-		decoded = decode_nbt(bytes(newList))
+				temp.append(x)
+		decoded = decode_nbt(bytes(temp))
 		for tagl in decoded.tags:
 			for tagd in tagl.tags:
 				try:
@@ -140,28 +115,29 @@ def getItems(playerData):
 
 print('starting')
 
-pageAt = int(open('pageToStartAt.txt').read())
-while pageAt < 4000:
-	try:
-		print(f'page {pageAt}')
-		lbPlayers = doRequest(f'https://pitpanda.rocks/api/leaderboard/xp?page={pageAt}')
-		if lbPlayers['success']:
-			pageAt += 1
-			if len(lbPlayers['leaderboard']) > 0:
-				for lbPlayer in lbPlayers['leaderboard']:
-					playerUuid = lbPlayer['uuid']
-					playerUsername = lbPlayer['name']
-					if ']' in playerUsername:
-						playerUsername = playerUsername.split(']')[1][3:]
-					else: #no rank
-						playerUsername = playerUsername[5:]
-					#print(f'checking {playerUsername}')
-					checkPlayer(playerUsername)
-			else:
-				pass
+pageAt = random.randint(1,3000)#int(input('What page of XP leaderboards to start at?\n'))
+while pageAt < 9999:
+	#try:
+	print(f'page {pageAt}')
+	lbPlayers = doRequest(f'https://pitpanda.rocks/api/leaderboard/xp?page={pageAt}')
+	if lbPlayers['success']:
+		print(f'got lb page {pageAt}')
+		pageAt += 1
+		if len(lbPlayers['leaderboard']) > 0:
+			for lbPlayer in lbPlayers['leaderboard']:
+				playerUuid = lbPlayer['uuid']
+				playerUsername = lbPlayer['name']
+				if ']' in playerUsername:
+					playerUsername = playerUsername.split(']')[1][3:]
+				else: #no rank
+					playerUsername = playerUsername[5:]
+				#print(f'checking {playerUsername}')
+				checkPlayer(playerUsername)
 		else:
-			pass
-	except:
+			break
+	else:
 		pass
+	#except:
+	#	print('mainloop error')
 
 print('done')
