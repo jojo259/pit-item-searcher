@@ -18,7 +18,7 @@ def checkItem(item):
 	except:
 		pass
 
-	itemCount = None #how many there are, e.g. half a stack of vile = 32. will be left as None if the item is unstackable (integer)
+	itemCount = None #how many there are, e.g. half a stack of vile = 32. will be left as None i think if the item is unstackable (integer)
 	try:
 		itemCount = item['count']
 	except:
@@ -70,7 +70,7 @@ def checkItem(item):
 
 		if toOutput:
 			print()
-			print('writing one to output.txt')
+			print(f'writing {itemName} to output.txt')
 			print()
 			open('output.txt', 'a', encoding = 'UTF-8').write(str(item) + '\n\n')
 
