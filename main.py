@@ -167,7 +167,7 @@ print('starting')
 
 pageAt = int(input('What page of XP leaderboards to start at?\n'))
 
-open('output.txt', 'a').write(f'\n---\nNEW SEARCH FROM {pageAt}\n---\n')
+open('output.txt', 'a', encoding = 'UTF-8').write(f'\n---\nNEW SEARCH FROM {pageAt}\n---\n')
 
 while pageAt < 9999:
 	try:
@@ -192,4 +192,4 @@ while pageAt < 9999:
 
 print('done')
 
-open('output.txt', 'a').write(f'\n---\nFINISHED SEARCH\n---\n')
+open('output.txt', 'a', encoding = 'UTF-8').write(f'\n---\nFINISHED SEARCH\n---\n')
