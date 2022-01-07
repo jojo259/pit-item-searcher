@@ -1,56 +1,91 @@
-import hypixel
-import gzip
-import zlib
 import requests
 import time
 import nbt
 import io
-import base64
-import random
 import math
-#from tinydb import TinyDB, Query
 from nbt.nbt import NBTFile, TAG_Long, TAG_Int, TAG_String, TAG_List, TAG_Compound
 
 try:
 	apiKey = open('apiKey.txt').read()
 except:
-	print('create text file "apiKey"')
+	print('\nerror, create text file "apiKey" with your hypixel api key\nexiting')
+	exit()
 
 def checkItem(item):
-	itemName = None
+	itemName = None #item's name e.g. '§9Tier III Blue Pants'. use itemName[2:] to remove the color coding at the start or just use like <if 'Dark' in itemName> if ur lazy
 	try:
 		itemName = item['tag']['display']['Name']
 	except:
 		pass
-	if itemName != None:
+
+	itemCount = None #how many there are, e.g. half a stack of vile = 32. will be left as None if the item is unstackable (integer)
+	try:
+		itemCount = item['count']
+	except:
+		pass
+
+	itemEnchants = None #list of enchants in {'Key': <enchantKeyString>, 'Level': <levelInteger>} dict format
+	try:
+		itemEnchants = item['tag']['ExtraAttributes']['CustomEnchants']
+	except:
+		pass
+
+	itemNonce = None #item's nonce (integer)
+	try:
+		itemNonce = item['tag']['ExtraAttributes']['Nonce']
+	except:
+		pass
+
+	itemLives = None #current lives (integer)
+	try:
+		itemLives = item['tag']['ExtraAttributes']['Lives']
+	except:
+		pass
+
+	itemMaxLives = None #maximum lives (integer)
+	try:
+		itemMaxLives = item['tag']['ExtraAttributes']['MaxLives']
+	except:
+		pass
+
+	itemTier = None #current tier (0, 1, 2, 3) (integer)
+	try:
+		itemTier = item['tag']['ExtraAttributes']['UpgradeTier']
+	except:
+		pass
+
+	itemGemmed = None #gemmed status. None if not gemmed, 1 (integer) if gemmed
+	try:
+		itemGemmed = item['tag']['ExtraAttributes']['UpgradeGemsUses']
+	except:
+		pass
+
+	if itemName != None: #avoids checking empty inventory slots
 		toOutput = False
 
-		print(itemName)
+		if 'Dark' in itemName: #currently checks for dark pants with 150+ lives
+			maxLives = item['tag']['ExtraAttributes']['MaxLives']
+			if maxLives >= 150:
+				toOutput = True
 
 		if toOutput:
 			print()
-			print(item)
+			print('writing one to output.txt')
+			print()
+			open('output.txt', 'a', encoding = 'UTF-8').write(str(item) + '\n\n')
 
 def checkPlayer(playerUsername):
-	#print(f'checking {playerUsername}')
 	toCheckUrl = f'https://api.hypixel.net/player?key={apiKey}&name={playerUsername}'
 	dataReceived = doRequest(toCheckUrl)
-	if dataReceived != None:
+	print(f'checking {playerUsername}')
+	try:
 		playerItems = getItems(dataReceived)
 		for item in playerItems:
+			item['ownerUuid'] = dataReceived['player']['uuid']
+			item['owner'] = playerUsername
 			checkItem(item)
-	else:
-		print('a')
-
-def doRequest(url):
-	returnedApi = False
-	while not returnedApi:
-		try:
-			apiCalled = requests.get(url, timeout = 10).json()
-			returnedApi = True
-			return apiCalled
-		except:
-			print('api error, retrying')
+	except:
+		print(f'error when checking {playerUsername}')
 
 def unpack_nbt(tag): #credit CrypticPlasma on hypixel forums
 	"""
@@ -65,11 +100,11 @@ def unpack_nbt(tag): #credit CrypticPlasma on hypixel forums
 		return tag.value
 
 def decode_nbt(raw): #credit CrypticPlasma on hypixel forums, modified
-	    """
-	    Decode a gziped and base64 decoded string to an NBT object
-	    """
+	"""
+	Decode a gziped and base64 decoded string to an NBT object
+	"""
 
-	    return nbt.nbt.NBTFile(fileobj=io.BytesIO(raw))
+	return nbt.nbt.NBTFile(fileobj=io.BytesIO(raw))
 
 def getItems(playerData):
 	items = []
@@ -113,15 +148,32 @@ def getItems(playerData):
 
 	return items
 
+def doRequest(url):
+	returnedApi = False
+	while not returnedApi:
+		try:
+			apiCalled = requests.get(url, timeout = 10).json()
+			if apiCalled['success']:
+				returnedApi = True
+				return apiCalled
+			else:
+				print('api error, probably throttled, retrying')
+				time.sleep(1)
+		except:
+			print('api error, probably timeout, retrying')
+			time.sleep(1)
+
 print('starting')
 
-pageAt = random.randint(1,3000)#int(input('What page of XP leaderboards to start at?\n'))
+pageAt = int(input('What page of XP leaderboards to start at?\n'))
+
+open('output.txt', 'a').write(f'\n---\nNEW SEARCH FROM {pageAt}\n---\n')
+
 while pageAt < 9999:
-	#try:
-	print(f'page {pageAt}')
-	lbPlayers = doRequest(f'https://pitpanda.rocks/api/leaderboard/xp?page={pageAt}')
-	if lbPlayers['success']:
-		print(f'got lb page {pageAt}')
+	try:
+		print(f'page {pageAt}')
+		lbPlayers = doRequest(f'https://pitpanda.rocks/api/leaderboard/xp?page={pageAt}')
+		print(f'got leaderboard page {pageAt}')
 		pageAt += 1
 		if len(lbPlayers['leaderboard']) > 0:
 			for lbPlayer in lbPlayers['leaderboard']:
@@ -134,10 +186,10 @@ while pageAt < 9999:
 				#print(f'checking {playerUsername}')
 				checkPlayer(playerUsername)
 		else:
-			break
-	else:
-		pass
-	#except:
-	#	print('mainloop error')
+			break #finished checking all leaderboards
+	except:
+		print(f'error when checking leaderboards page {pageAt}')
 
 print('done')
+
+open('output.txt', 'a').write(f'\n---\nFINISHED SEARCH\n---\n')
