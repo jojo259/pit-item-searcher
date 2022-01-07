@@ -149,12 +149,10 @@ def getItems(playerData):
 	return items
 
 def doRequest(url):
-	returnedApi = False
-	while not returnedApi:
+	while True:
 		try:
 			apiCalled = requests.get(url, timeout = 10).json()
 			if apiCalled['success']:
-				returnedApi = True
 				return apiCalled
 			else:
 				print('api error, probably throttled, retrying')
