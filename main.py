@@ -143,7 +143,7 @@ def getItems(playerData):
 				try:
 					unpacked = unpack_nbt(tagd)
 					if unpacked != {}:
-						items.append(unpack_nbt(tagd))
+						items.append(unpacked)
 				except:
 					pass
 
