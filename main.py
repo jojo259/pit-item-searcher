@@ -5,6 +5,7 @@ import io
 import math
 from nbt.nbt import NBTFile, TAG_Long, TAG_Int, TAG_String, TAG_List, TAG_Compound
 
+apiKey = ''
 try:
 	apiKey = open('apiKey.txt').read()
 except:
