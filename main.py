@@ -26,9 +26,7 @@ def checkItem(curItem):
 		toOutput = False
 
 		if 'Dark' in itemName: #currently checks for dark pants with 150+ lives
-			maxLives = curItem['tag']['ExtraAttributes']['MaxLives']
-			toOutput = True
-			if maxLives >= 150:
+			if itemMaxLives >= 150:
 				toOutput = True
 
 		if toOutput:
@@ -125,7 +123,7 @@ def doRequest(url):
 
 print('starting')
 
-pageAt = 50#int(input('What page of XP leaderboards to start at?\n'))
+pageAt = int(input('What page of XP leaderboards to start at?\n'))
 
 open('output.txt', 'a', encoding = 'UTF-8').write(f'\n---\nNEW SEARCH FROM {pageAt}\n---\n')
 
