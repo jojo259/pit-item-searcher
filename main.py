@@ -111,43 +111,42 @@ def getItems(playerData):
 	items = []
 	toDecode = []
 
-	try: #inventory
-		toDecode.append(playerData['player']['stats']['Pit']['profile']['inv_contents']['data'])
-	except:
-		pass
-	try: #enderchest
-		toDecode.append(playerData['player']['stats']['Pit']['profile']['inv_enderchest']['data'])
-	except:
-		pass
-
-	try: #stash
-		toDecode.append(playerData['player']['stats']['Pit']['profile']['item_stash']['data'])
-	except:
-		pass
-
-	try: #spire stash
-		toDecode.append(playerData['player']['stats']['Pit']['profile']['spire_stash_inv']['data'])
-	except:
-		pass
-
+	toDecode.append(getVal(playerData, ['player','stats','Pit','profile','inv_contents','data'])) #inventory
+	toDecode.append(getVal(playerData, ['player','stats','Pit','profile','inv_enderchest','data'])) #enderchest
+	toDecode.append(getVal(playerData, ['player','stats','Pit','profile','item_stash','data'])) #stash
+	toDecode.append(getVal(playerData, ['player','stats','Pit','profile','spire_stash_inv','data'])) #spire stash
+	toDecode.append(getVal(playerData, ['player','stats','Pit','profile','inv_armor','data'])) #armor
+	toDecode.append(getVal(playerData, ['player','stats','Pit','profile','mystic_well_item','data'])) #mystic well item
+	toDecode.append(getVal(playerData, ['player','stats','Pit','profile','mystic_well_pants','data'])) #mystic well pants
+	
 	for curDecode in toDecode:
-		temp = []
-		for x in curDecode:
-			if x < 0:
-				temp.append(x + 256)
-			else:
-				temp.append(x)
-		decoded = decode_nbt(bytes(temp))
-		for tagl in decoded.tags:
-			for tagd in tagl.tags:
-				try:
-					unpacked = unpack_nbt(tagd)
-					if unpacked != {}:
-						items.append(unpacked)
-				except:
-					pass
+		if curDecode != None:
+			temp = []
+			for x in curDecode:
+				if x < 0:
+					temp.append(x + 256)
+				else:
+					temp.append(x)
+			decoded = decode_nbt(bytes(temp))
+			for tagl in decoded.tags:
+				for tagd in tagl.tags:
+					try:
+						unpacked = unpack_nbt(tagd)
+						if unpacked != {}:
+							items.append(unpacked)
+					except:
+						pass
 
 	return items
+
+def getVal(theDict, thePath):
+	try:
+		for i in range(len(thePath)):
+			theDict = theDict[thePath[0]]
+			thePath.pop(0)
+		return theDict
+	except:
+		return None
 
 def doRequest(url):
 	while True:
