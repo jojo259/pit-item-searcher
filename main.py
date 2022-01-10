@@ -12,60 +12,22 @@ except:
 	print('\nerror, create text file "apiKey" with your hypixel api key\nexiting')
 	exit()
 
-def checkItem(item):
-	itemName = None #item's name e.g. '§9Tier III Blue Pants'. use itemName[2:] to remove the color coding at the start or just use like <if 'Dark' in itemName> if ur lazy
-	try:
-		itemName = item['tag']['display']['Name']
-	except:
-		pass
-
-	itemCount = None #how many there are, e.g. half a stack of vile = 32. will be left as None i think if the item is unstackable (integer)
-	try:
-		itemCount = item['count']
-	except:
-		pass
-
-	itemEnchants = None #list of enchants in {'Key': <enchantKeyString>, 'Level': <levelInteger>} dict format
-	try:
-		itemEnchants = item['tag']['ExtraAttributes']['CustomEnchants']
-	except:
-		pass
-
-	itemNonce = None #item's nonce (integer)
-	try:
-		itemNonce = item['tag']['ExtraAttributes']['Nonce']
-	except:
-		pass
-
-	itemLives = None #current lives (integer)
-	try:
-		itemLives = item['tag']['ExtraAttributes']['Lives']
-	except:
-		pass
-
-	itemMaxLives = None #maximum lives (integer)
-	try:
-		itemMaxLives = item['tag']['ExtraAttributes']['MaxLives']
-	except:
-		pass
-
-	itemTier = None #current tier (0, 1, 2, 3) (integer)
-	try:
-		itemTier = item['tag']['ExtraAttributes']['UpgradeTier']
-	except:
-		pass
-
-	itemGemmed = None #gemmed status. None if not gemmed, 1 (integer) if gemmed
-	try:
-		itemGemmed = item['tag']['ExtraAttributes']['UpgradeGemsUses']
-	except:
-		pass
-
+def checkItem(curItem):
+	itemName = getVal(curItem, ['tag','display','Name']) #item's name e.g. '§9Tier III Blue Pants'. use itemName[2:] to remove the color coding at the start or just use like <if 'Dark' in itemName> if ur lazy
+	itemCount = getVal(curItem, ['count']) #how many there are, e.g. half a stack of vile = 32. will be left as None i think if the item is unstackable (integer)
+	itemEnchants = getVal(curItem, ['tag','ExtraAttributes','CustomEnchants']) #list of enchants in {'Key': <enchantKeyString>, 'Level': <levelInteger>} dict format
+	itemNonce = getVal(curItem, ['tag','ExtraAttributes','Nonce']) #item's nonce (integer)
+	itemLives = getVal(curItem, ['tag','ExtraAttributes','Lives']) #current lives (integer)
+	itemMaxLives = getVal(curItem, ['tag','ExtraAttributes','MaxLives']) #maximum lives (integer)
+	itemTier = getVal(curItem, ['tag','ExtraAttributes','UpgradeTier']) #current tier (0, 1, 2, 3) (integer)
+	itemGemmed = getVal(curItem, ['tag','ExtraAttributes','UpgradeGemsUses']) #gemmed status. None if not gemmed, 1 (integer) if gemmed
+	
 	if itemName != None: #avoids checking empty inventory slots
 		toOutput = False
 
 		if 'Dark' in itemName: #currently checks for dark pants with 150+ lives
-			maxLives = item['tag']['ExtraAttributes']['MaxLives']
+			maxLives = curItem['tag']['ExtraAttributes']['MaxLives']
+			toOutput = True
 			if maxLives >= 150:
 				toOutput = True
 
@@ -73,20 +35,20 @@ def checkItem(item):
 			print()
 			print(f'writing {itemName} to output.txt')
 			print()
-			open('output.txt', 'a', encoding = 'UTF-8').write(str(item) + '\n\n')
+			open('output.txt', 'a', encoding = 'UTF-8').write(str(curItem) + '\n\n')
 
 def checkPlayer(playerUsername):
 	toCheckUrl = f'https://api.hypixel.net/player?key={apiKey}&name={playerUsername}'
 	dataReceived = doRequest(toCheckUrl)
 	print(f'checking {playerUsername}')
-	try:
-		playerItems = getItems(dataReceived)
-		for item in playerItems:
-			item['ownerUuid'] = dataReceived['player']['uuid']
-			item['owner'] = playerUsername
-			checkItem(item)
-	except:
-		print(f'error when checking {playerUsername}')
+	#try:
+	playerItems = getItems(dataReceived)
+	for item in playerItems:
+		item['ownerUuid'] = dataReceived['player']['uuid']
+		item['owner'] = playerUsername
+		checkItem(item)
+	#except:
+	#	print(f'error when checking {playerUsername}')
 
 def unpack_nbt(tag): #credit CrypticPlasma on hypixel forums
 	"""
@@ -163,30 +125,30 @@ def doRequest(url):
 
 print('starting')
 
-pageAt = int(input('What page of XP leaderboards to start at?\n'))
+pageAt = 50#int(input('What page of XP leaderboards to start at?\n'))
 
 open('output.txt', 'a', encoding = 'UTF-8').write(f'\n---\nNEW SEARCH FROM {pageAt}\n---\n')
 
 while pageAt < 9999:
-	try:
-		print(f'page {pageAt}')
-		lbPlayers = doRequest(f'https://pitpanda.rocks/api/leaderboard/xp?page={pageAt}')
-		print(f'got leaderboard page {pageAt}')
-		pageAt += 1
-		if len(lbPlayers['leaderboard']) > 0:
-			for lbPlayer in lbPlayers['leaderboard']:
-				playerUuid = lbPlayer['uuid']
-				playerUsername = lbPlayer['name']
-				if ']' in playerUsername:
-					playerUsername = playerUsername.split(']')[1][3:]
-				else: #no rank
-					playerUsername = playerUsername[5:]
-				#print(f'checking {playerUsername}')
-				checkPlayer(playerUsername)
-		else:
-			break #finished checking all leaderboards
-	except:
-		print(f'error when checking leaderboards page {pageAt}')
+	#try:
+	print(f'page {pageAt}')
+	lbPlayers = doRequest(f'https://pitpanda.rocks/api/leaderboard/xp?page={pageAt}')
+	print(f'got leaderboard page {pageAt}')
+	pageAt += 1
+	if len(lbPlayers['leaderboard']) > 0:
+		for lbPlayer in lbPlayers['leaderboard']:
+			playerUuid = lbPlayer['uuid']
+			playerUsername = lbPlayer['name']
+			if ']' in playerUsername:
+				playerUsername = playerUsername.split(']')[1][3:]
+			else: #no rank
+				playerUsername = playerUsername[5:]
+			#print(f'checking {playerUsername}')
+			checkPlayer(playerUsername)
+	else:
+		break #finished checking all leaderboards
+	#except:
+	#	print(f'error when checking leaderboards page {pageAt}')
 
 print('done')
 
